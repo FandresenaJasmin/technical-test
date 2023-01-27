@@ -1,7 +1,11 @@
 /* eslint-disable @next/next/no-img-element */
 'use client';
 
-import { memo } from 'react';
+import { ActionType } from '@/redux/action/tech-action';
+import { techReducer, TechState } from '@/redux/reducer/tech-reducer';
+import { store } from '@/redux/store/tech-store';
+import { memo, useEffect, useReducer } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import './styles.css';
 
 /**
@@ -17,17 +21,21 @@ import './styles.css';
 
 const ItemList = () => {
 
-    const techs = ["HTML/CSS", "React", "VueJs", "NodeJs", "Typescript", "Java", "Python", "PHP", "Go", "C#"];
+    const techs = useSelector((state:TechState)=>{
+        return state.techs.items
+    })
+   
+   
 
     const addJsToTheList = () => {
-
+       store.dispatch({type :ActionType.ADD_ITEM,payload:{name:"Javascript",position:4}})
     }
 
     return (
         <div>
             <ul>
                 {
-                    techs.map((tech) => <li key={`${tech.toLowerCase()}`} className="item">{tech}</li>)
+                    techs?.map((tech:any) => <li key={`${tech.toLowerCase()}`} className="item">{tech}</li>)
                 }
             </ul>
             <button className='btn btn-add' onClick={addJsToTheList}>Add Javascript after NodeJs</button>
