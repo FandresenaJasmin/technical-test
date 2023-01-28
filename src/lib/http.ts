@@ -6,6 +6,10 @@ interface FetchOptions extends RequestInit {
   timeout?: number;
 }
 
+enum ERROR_TYPE {
+  TIME_OUT = 'TIME_OUT',
+}
+
 /**
  * Execute fetch with additional options, inlcuding retries and timeout
  *
@@ -31,5 +35,66 @@ interface FetchOptions extends RequestInit {
 export default async function fetchEnhanced(url: string, o: FetchOptions): Promise<Response> {
   const { retries = 0, timeout = 0, ...options } = o || {};
   console.log('additional options', { retries, timeout });
-  return fetch(url, options);
+  let result: Promise<Response>;
+  let retryLeft = 1;
+  while (retryLeft <= retries) {
+    try {
+      result = await timedOutAbortableFetch(timeout, url);
+      if (result.ok) {
+        retryLeft = retries;
+        break;
+      }
+    } catch (e) {
+      console.error(`FetchEnhanced , retry n° : ${retryLeft} , ${retries}`);
+      retryLeft++;
+
+      let errorResponse: any;
+      let maxRetriesExededErrorMessage = 'Maximum retries reached !, last error :';
+      let errorMessage = e;
+      if (e === ERROR_TYPE.TIME_OUT) {
+        errorMessage = 'Request Timeout';
+      }
+      errorResponse = {
+        status: 408,
+        statusText: retryLeft > retries ? `${maxRetriesExededErrorMessage} ${errorMessage}` : errorMessage,
+      } as Response;
+
+      result = Promise.resolve(errorResponse);
+    }
+  }
+
+  return result;
 }
+
+const timedOutAbortableFetch = (timeout: number, url: string): Promise<Response> => {
+  const ac = new AbortController();
+  ac.signal.addEventListener(
+    'abort',
+    () => {
+      //onAbort
+    },
+    { once: true }
+  );
+  let cancellerTimeout: Promise<Response> = new Promise((resolve, reject) => {
+    let id = setTimeout(() => {
+      clearTimeout(id);
+      ac.abort();
+      reject(ERROR_TYPE.TIME_OUT);
+    }, timeout);
+  });
+
+  // Returns a race between our timeout and the passed in promise
+  return Promise.race([
+    fetch(url, { signal: ac.signal })
+      .then((response) => {
+        if (response.ok) {
+          return Promise.resolve(response);
+        }
+
+        return Promise.reject(new Error(`HTTP Error ${response.status}: ${response.statusText}`));
+      })
+      .catch((e) => Promise.reject(e))
+      .finally(() => Promise.resolve()),
+    cancellerTimeout,
+  ]);
+};
