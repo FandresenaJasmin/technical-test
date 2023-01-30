@@ -15,12 +15,25 @@ import styles from '../styles/page.module.css';
 import '../styles/all.css';
 import './welcome.css';
 import { ScrollToTopButton } from '@/components/ScrollToTopButton';
+import { useEffect, useState } from 'react';
 
 const font = Font({ subsets: ['latin'], variable: '--main-font' });
 const mono = Mono({ subsets: ['latin'], variable: '--font-mono', weight: ['700'] });
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   useIntercom('i5qk9adq');
+
+  const [showBtn,setShowBtn] = useState(false)
+
+  useEffect(() => {
+    const handleScrollBtnVisibility = () => {
+      window.pageYOffset > 200 ? setShowBtn(true) : setShowBtn(false)
+    }
+    window.addEventListener('scroll',handleScrollBtnVisibility,true)
+    return () => {
+      window.removeEventListener('scroll',handleScrollBtnVisibility,true)
+    }
+  },[])
 
   return (
     <Provider>
@@ -62,7 +75,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </header>
               <section className={styles.content}>{children}</section>
               <footer className={cx(styles.footer)}>
-                <ScrollToTopButton />
+               {showBtn &&  <ScrollToTopButton />}
                 <div className="f-inner">
                   <p>
                     2023 <Link href="/">WAU I/O</Link> &copy; All rights reserved.

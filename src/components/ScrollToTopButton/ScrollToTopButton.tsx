@@ -14,9 +14,13 @@ import './styles.css';
  *
  */
 function ScrollToTopButton() {
+  const scrollToTp = ()=>{
+    window.scrollTo({top:0,behavior:"smooth"})
+  }
+
   return (
     <div>
-      <button className="btn right-bottom-btn">Go to Top</button>
+     <button className="btn right-bottom-btn" onClick={()=>scrollToTp()}>Go to Top</button>
     </div>
   );
 }
